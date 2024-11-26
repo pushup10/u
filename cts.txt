@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Example</title>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <div id="status">Connecting...</div>
+    <button id="sendMessage">Send Message</button>
+    <div id="messageDisplay"></div>
+    <script>
+        const socket = new WebSocket('ws://localhost:8080');
+        socket.onopen = () => {
+            document.getElementById('status').textContent = 'Connection Successful!';
+        };
+        document.getElementById('sendMessage').addEventListener('click', () => {
+            const message = 'Hello from Client!';
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(message);
+                document.getElementById('messageDisplay').textContent = `Message Sent: ${message}`;
+            } else {
+                alert('WebSocket connection is not open.');
+            }
+        });
+    </script>
+</body>
+</html>
+
+      
+const WebSocket = require('ws');
+const server = new WebSocket.Server({ port: 8080 });
+server.on('connection', (socket) => {
+    console.log('Client connected.');
+    socket.on('message', (message) => {
+        console.log(`Received message: ${message}`);
+    });
+    socket.on('close', () => {
+        console.log('Client disconnected.');
+    });
+});
+console.log('WebSocket server running on ws://localhost:8080');
