@@ -1,0 +1,84 @@
+import java.io.*;
+import java.net.*;
+import javax.net.ssl.SSLSocketFactory;
+
+public class POP3Client {
+    public static void main(String[] args) {
+        String pop3Server = "pop.gmail.com"; // Replace with your POP3 server
+        int pop3Port = 995; // Standard POP3 port
+
+        // Replace with your actual credentials
+        String username = "2022cs0033@svce.ac.in";
+        String password = "********";
+
+        try {
+            Socket socket = SSLSocketFactory.getDefault().createSocket(pop3Server, pop3Port);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+
+            // Receive greeting
+            String line;
+            while ((line = in.readLine()) != null) {
+                System.out.println(line);
+                if (line.startsWith("+OK")) {
+                    break;
+                }
+            }
+
+            // Send username
+            out.println("USER " + username);
+            line = in.readLine();
+            System.out.println(line);
+
+            // Send password
+            out.println("PASS " + password);
+            line = in.readLine();
+            System.out.println(line);
+
+            if (line.startsWith("+OK")) {
+                // Use STAT command to get message count
+                out.println("STAT");
+                line = in.readLine();
+                System.out.println(line);
+
+                if (line.startsWith("+OK")) {
+                    String[] parts = line.split(" ");
+                    if (parts.length >= 2) {
+                        int messageCount = Integer.parseInt(parts[1]);
+                        for (int i = 1; i <= messageCount; i++) {
+                            out.println("RETR " + i);
+                            boolean messageStarted = false;
+                            while ((line = in.readLine()) != null) {
+                                if (line.equals(".")) {
+                                    break;
+                                }
+                                if (messageStarted) {
+                                    System.out.println(line);
+                                }
+                                if (line.startsWith("+OK")) {
+                                    messageStarted = true;
+                                }
+                            }
+                        }
+                    } else {
+                        System.out.println("Unexpected STAT response format.");
+                    }
+                } else {
+                    System.out.println("Failed to get message count.");
+                }
+            }
+
+            // Optional: Delete Messages
+            // out.println("DELE 1"); // Example delete message 1
+
+            // Close the connection
+            out.println("QUIT");
+
+            in.close();
+            out.close();
+            socket.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
