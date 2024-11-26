@@ -1,0 +1,44 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+currentpage=1
+data=[]
+proceed=True
+
+while proceed:
+    print(f"Currently scraping page : {currentpage}")
+    url=f"https://books.toscrape.com/catalogue/page-{currentpage}.html"
+
+    proxies=""
+    try:
+        page=requests.get(url,proxies=proxies,timeout=10)
+        page.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed : {e}")
+        proceed=False
+        break
+    soup=BeautifulSoup(page.text,"html.parser")
+
+    if soup.title.text=="404 Not Found":
+        proceed=False
+        break
+    else:
+        all_books=soup.find_all("li",class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
+
+    for s in all_books:
+        item={}
+        item["Title"]=s.find("img").attrs["alt"]
+        item["Link"]="https://books.toscrape.com/catalogue/"+s.find("a").attrs["href"]
+        item["Price"]=s.find("p",class_="price_color").text[2:]
+        item["Stock"]=s.find("p",class_="instock availability").text.strip().split("\n")[0]
+
+        if item["Title"] and item["Link"] and item["Price"] and item["Stock"]:
+            data.append(item)
+    currentpage+=1
+
+df=pd.DataFrame(data)
+df.to_excel("books.xlsx",index=False)
+df.to_csv("books.csv",index=False)
+
+print(f"Scraping complete. Data saved to books.xlsx and books.csv")
